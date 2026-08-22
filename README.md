@@ -1,23 +1,14 @@
-# Vision — 30-min Long-form AI Video
+# Vision (named repo — stub)
 
-**Managed by:** Dr. Victor (Grok AI)  
-**Primary Model:** Grok  
-**Status:** New (later priority)
+**Department:** Vision — YouTube long-form / drama. **Not** AURA2. **Not** Instagram interiors.
 
-## Goal
-Produce one finished high-quality 30-minute AI-generated long-form video.
+## Where the real files are
+Production (EP001 *Last Delivery*, scripts, stills Actions) lives in:
 
-## Rules
-- Zero-cost tools first (free I2V credits, Blender, ffmpeg, open-source)
-- All scripts and final cuts verified by Victor
-- No mixing with AURA2 or Bubblebee content
+**https://github.com/vickykenin-lang/dr-victor-orchestrator/tree/main/vision**
 
-## Current Priority
-Low until AURA2 is delivering real leads.
+This repo is the **named slot** from the org chart. Do not put AURA2 secrets here.  
+Do not expect stills workflow here.
 
-## Structure (to expand)
-- scripts/
-- storyboards/
-- assets/
-- renders/
-- final/
+## Status (22 Aug 2026)
+Stub. Hub owns execution until this repo is filled or archived.
