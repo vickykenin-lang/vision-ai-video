@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
     private volatile boolean modelOperationRunning = false;
     private volatile boolean teamOperationRunning = false;
     private boolean teamMode = false;
-    private boolean teamPanelExpanded = true;
+    private boolean teamPanelExpanded = false;
 
     private final int BG=Color.rgb(7,9,13), PANEL=Color.rgb(18,21,28), PANEL2=Color.rgb(27,31,40);
     private final int TEXT=Color.rgb(242,245,249), MUTED=Color.rgb(145,154,168), ACCENT=Color.rgb(110,92,255), ACCENT2=Color.rgb(0,197,255);
@@ -64,25 +64,25 @@ public class MainActivity extends Activity {
     }
 
     private void buildUi(){
-        LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(dp(14),dp(7),dp(14),dp(10)); root.setBackgroundColor(BG);
+        LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(dp(10),dp(3),dp(10),dp(8)); root.setBackgroundColor(BG);
         root.addView(buildHeader()); root.addView(buildTabs()); root.addView(buildModelBar()); root.addView(buildTeamPanel());
         scrollView=new ScrollView(this); scrollView.setFillViewport(true); chatContainer=new LinearLayout(this); chatContainer.setOrientation(LinearLayout.VERTICAL); chatContainer.setPadding(0,dp(8),0,dp(12)); scrollView.addView(chatContainer);
         root.addView(scrollView,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1)); root.addView(buildComposer()); setContentView(root);
     }
 
     private View buildHeader(){
-        LinearLayout r=new LinearLayout(this); r.setGravity(Gravity.CENTER_VERTICAL); r.setPadding(0,0,0,dp(3));
-        TextView mark=label("V",14,Color.WHITE,true); mark.setGravity(Gravity.CENTER); mark.setBackground(roundGradient(dp(15),ACCENT,ACCENT2)); r.addView(mark,new LinearLayout.LayoutParams(dp(34),dp(34)));
-        LinearLayout t=new LinearLayout(this); t.setOrientation(LinearLayout.VERTICAL); t.setPadding(dp(9),0,0,0); t.addView(label("Vicky AI",19,TEXT,true)); t.addView(label("Self-organizing AI team",9.5f,MUTED,false)); r.addView(t,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1));
-        sandboxChip=label(isKilled()?"KILLED":"SAFE",9,Color.WHITE,true); sandboxChip.setGravity(Gravity.CENTER); sandboxChip.setPadding(dp(9),dp(5),dp(9),dp(5)); sandboxChip.setBackground(round(isKilled()?DANGER:SAFE,dp(12))); sandboxChip.setOnClickListener(v->showSandbox()); r.addView(sandboxChip);
-        TextView settings=label("⚙",16,TEXT,false); settings.setGravity(Gravity.CENTER); settings.setBackground(round(PANEL,dp(17))); settings.setOnClickListener(v->showSettings()); LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(dp(34),dp(34)); sp.setMargins(dp(7),0,0,0); r.addView(settings,sp); return r;
+        LinearLayout r=new LinearLayout(this); r.setGravity(Gravity.CENTER_VERTICAL); r.setPadding(0,0,0,dp(1));
+        TextView mark=label("V",13,Color.WHITE,true); mark.setGravity(Gravity.CENTER); mark.setBackground(roundGradient(dp(14),ACCENT,ACCENT2)); r.addView(mark,new LinearLayout.LayoutParams(dp(30),dp(30)));
+        LinearLayout t=new LinearLayout(this); t.setOrientation(LinearLayout.VERTICAL); t.setPadding(dp(8),0,0,0); t.addView(label("Vicky AI",17.5f,TEXT,true)); t.addView(label("Self-organizing AI team",8.5f,MUTED,false)); r.addView(t,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1));
+        sandboxChip=label(isKilled()?"KILLED":"SAFE",8.5f,Color.WHITE,true); sandboxChip.setGravity(Gravity.CENTER); sandboxChip.setPadding(dp(7),dp(4),dp(7),dp(4)); sandboxChip.setBackground(round(isKilled()?DANGER:SAFE,dp(11))); sandboxChip.setOnClickListener(v->showSandbox()); r.addView(sandboxChip);
+        TextView settings=label("⚙",14.5f,TEXT,false); settings.setGravity(Gravity.CENTER); settings.setBackground(round(PANEL,dp(15))); settings.setOnClickListener(v->showSettings()); LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(dp(30),dp(30)); sp.setMargins(dp(6),0,0,0); r.addView(settings,sp); return r;
     }
 
     private View buildTabs(){
-        LinearLayout tabs=new LinearLayout(this); tabs.setPadding(dp(3),dp(3),dp(3),dp(3)); tabs.setBackground(round(PANEL,dp(18)));
-        chatTab=label("Chat",12,TEXT,true); teamTab=label("Team",12,MUTED,true); chatTab.setGravity(Gravity.CENTER); teamTab.setGravity(Gravity.CENTER); chatTab.setBackground(round(PANEL2,dp(15)));
-        tabs.addView(chatTab,new LinearLayout.LayoutParams(0,dp(32),1)); tabs.addView(teamTab,new LinearLayout.LayoutParams(0,dp(32),1)); chatTab.setOnClickListener(v->setTeamMode(false)); teamTab.setOnClickListener(v->setTeamMode(true));
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); lp.setMargins(0,dp(4),0,dp(6)); tabs.setLayoutParams(lp); return tabs;
+        LinearLayout tabs=new LinearLayout(this); tabs.setPadding(dp(2),dp(2),dp(2),dp(2)); tabs.setBackground(round(PANEL,dp(15)));
+        chatTab=label("Chat",11.5f,TEXT,true); teamTab=label("Team",11.5f,MUTED,true); chatTab.setGravity(Gravity.CENTER); teamTab.setGravity(Gravity.CENTER); chatTab.setBackground(round(PANEL2,dp(13)));
+        tabs.addView(chatTab,new LinearLayout.LayoutParams(0,dp(27),1)); tabs.addView(teamTab,new LinearLayout.LayoutParams(0,dp(27),1)); chatTab.setOnClickListener(v->setTeamMode(false)); teamTab.setOnClickListener(v->setTeamMode(true));
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); lp.setMargins(0,dp(2),0,dp(4)); tabs.setLayoutParams(lp); return tabs;
     }
 
     private View buildModelBar(){
@@ -93,10 +93,10 @@ public class MainActivity extends Activity {
     }
 
     private View buildTeamPanel(){
-        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(9),dp(7),dp(9),dp(7)); box.setBackground(round(Color.rgb(13,16,22),dp(15)));
-        teamStatus=label("TEAM MODELS · self-organizing · tap to collapse ▲",9.5f,MUTED,true); teamStatus.setPadding(dp(3),dp(2),0,dp(5)); teamStatus.setOnClickListener(v->toggleTeamPanel()); box.addView(teamStatus);
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(8),dp(4),dp(8),dp(4)); box.setBackground(round(Color.rgb(13,16,22),dp(13)));
+        teamStatus=label("TEAM MODELS · tap to expand ▼",9.3f,MUTED,true); teamStatus.setGravity(Gravity.CENTER_VERTICAL); teamStatus.setPadding(dp(3),dp(4),dp(3),dp(4)); teamStatus.setOnClickListener(v->toggleTeamPanel()); box.addView(teamStatus);
         for(int i=0;i<4;i++){ final int slot=i; teamRows[i]=label("M"+(i+1)+" · AVAILABLE · NOT SET",10.3f,TEXT,false); teamRows[i].setPadding(dp(8),dp(5),dp(8),dp(5)); teamRows[i].setBackground(round(PANEL2,dp(10))); teamRows[i].setOnClickListener(v->showSlotDialog(slot)); LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); p.setMargins(0,dp(2),0,dp(2)); box.addView(teamRows[i],p); }
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); lp.setMargins(0,dp(7),0,dp(2)); box.setLayoutParams(lp); refreshTeamUi(); return box;
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); lp.setMargins(0,dp(5),0,dp(2)); box.setLayoutParams(lp); refreshTeamUi(); return box;
     }
 
     private void toggleTeamPanel(){
@@ -153,7 +153,7 @@ public class MainActivity extends Activity {
     private void refreshTeamUi(){
         JSONArray a=getTeam();
         if(teamStatus!=null){
-            String base=a.length()==4?"TEAM MODELS · 4/4 VERIFIED":"TEAM MODELS · "+a.length()+"/4 VERIFIED";
+            String base=a.length()==4?"TEAM · 4/4 VERIFIED":"TEAM · "+a.length()+"/4 VERIFIED";
             teamStatus.setText(base+(teamPanelExpanded?" · tap to collapse ▲":" · tap to expand ▼"));
         }
         for(int i=0;i<4;i++){if(teamRows[i]==null)continue;if(i<a.length()){JSONObject x=a.optJSONObject(i);String m=x==null?"":x.optString("model");if(m.length()>31)m=m.substring(0,31)+"…";teamRows[i].setText("M"+(i+1)+" · AVAILABLE · "+m+" · VERIFIED");teamRows[i].setTextColor(TEXT);}else{teamRows[i].setText("M"+(i+1)+" · AVAILABLE · NOT SET");teamRows[i].setTextColor(MUTED);}teamRows[i].setVisibility(teamPanelExpanded?View.VISIBLE:View.GONE);}
@@ -192,7 +192,7 @@ public class MainActivity extends Activity {
             JSONArray proposals=new JSONArray(); String rosterText=rosterText(roster);
             for(int i=0;i<4;i++){JSONObject member=roster.getJSONObject(i);updateTeamRow(i,"HUDDLE · proposing responsibility",member.optString("model"),AMBER);String instruction="You are teammate M"+(i+1)+" in a self-organizing 4-model team. Read the task and roster. Propose the most useful responsibility YOU should take for THIS task, and nominate the teammate best suited to coordinate the final synthesis. Do not assume any permanent role. Return STRICT JSON only: {\"responsibility\":\"short task-specific responsibility\",\"coordinator_vote\":\"M1|M2|M3|M4\",\"reason\":\"very short reason\"}.";String out=memberCall(member,task,rosterText,instruction,260);JSONObject p=parseJsonObject(out);p.put("slot","M"+(i+1));p.put("model",member.optString("model"));proposals.put(p);}
             int coordinatorIndex=chooseCoordinator(proposals); JSONObject coordinator=roster.getJSONObject(coordinatorIndex); addTeamEvent("Huddle decision","Coordinator for this task: M"+(coordinatorIndex+1)+" · "+coordinator.optString("model"),SAFE);
-            String planInstruction="You are the temporary coordinator chosen by the team for THIS task only. Using the four proposals below, assign a distinct concise responsibility to each teammate. Avoid duplicate work. The assignments must match the actual task and can be completely different on the next task. Return STRICT JSON only: {\"assignments\":[{\"slot\":\"M1\",\"task\":\"...\"},{\"slot\":\"M2\",\"task\":\"...\"},{\"slot\":\"M3\",\"task\":\"...\"},{\"slot\":\"M4\",\"task\":\"...\"}]}.";
+            String planInstruction="You are the temporary coordinator chosen by the team for THIS task only. Using the four proposals below, assign a distinct concise responsibility to each teammate. Avoid duplicate work. The assignments must match the actual task and can be completely different on the next task. Return STRICT JSON only: {\"assignments\":[{\"slot\":\"M1\",\"task\":\"...\"},{\"slot\":\"M2\",\"task\":\"...\"},{\"slot\":\"M3\",\"task\":\"...\"},{\"slot\":\"M4\",\"task\":\"...\"}]}";
             String planRaw=memberCall(coordinator,task,proposals.toString(),planInstruction,420);JSONObject plan=parseJsonObject(planRaw);JSONArray assignments=plan.optJSONArray("assignments");if(assignments==null||assignments.length()<4)assignments=fallbackAssignments(proposals);
             for(int i=0;i<4;i++){String assigned=findAssignment(assignments,i);final int row=i;runOnUiThread(()->teamRows[row].setText("M"+(row+1)+" · "+shortText(assigned,42)+" · ASSIGNED"));}
             addTeamEvent("Team plan",assignmentsSummary(assignments),ACCENT2);
