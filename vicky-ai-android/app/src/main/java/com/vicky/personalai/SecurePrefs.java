@@ -26,10 +26,17 @@ final class SecurePrefs {
 
     void putSecret(String key, String value) {
         try {
+            String safeValue = value == null ? "" : value.trim();
+            if ("api_key".equals(key)) {
+                if (safeValue.regionMatches(true, 0, "Bearer ", 0, 7)) {
+                    safeValue = safeValue.substring(7).trim();
+                }
+                if (!isValidApiKey(safeValue)) safeValue = "";
+            }
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, getKey());
             byte[] iv = cipher.getIV();
-            byte[] encrypted = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
+            byte[] encrypted = cipher.doFinal(safeValue.getBytes(StandardCharsets.UTF_8));
             prefs.edit()
                     .putString(key + "_iv", Base64.encodeToString(iv, Base64.NO_WRAP))
                     .putString(key + "_ct", Base64.encodeToString(encrypted, Base64.NO_WRAP))
@@ -48,7 +55,12 @@ final class SecurePrefs {
             GCMParameterSpec spec = new GCMParameterSpec(128, Base64.decode(ivText, Base64.NO_WRAP));
             cipher.init(Cipher.DECRYPT_MODE, getKey(), spec);
             byte[] plain = cipher.doFinal(Base64.decode(ctText, Base64.NO_WRAP));
-            return new String(plain, StandardCharsets.UTF_8);
+            String value = new String(plain, StandardCharsets.UTF_8).trim();
+            if ("api_key".equals(key)) {
+                if (value.regionMatches(true, 0, "Bearer ", 0, 7)) value = value.substring(7).trim();
+                if (!isValidApiKey(value)) return "";
+            }
+            return value;
         } catch (Exception e) {
             return "";
         }
@@ -60,6 +72,16 @@ final class SecurePrefs {
 
     String getString(String key, String fallback) {
         return prefs.getString(key, fallback);
+    }
+
+    private boolean isValidApiKey(String value) {
+        if (value == null || value.length() < 20 || value.length() > 4096) return false;
+        if (value.contains("##[") || value.contains("Run python") || value.contains("scripts/")) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (Character.isWhitespace(c) || Character.isISOControl(c)) return false;
+        }
+        return true;
     }
 
     private void ensureKey() {
