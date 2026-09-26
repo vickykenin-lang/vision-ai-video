@@ -26,7 +26,10 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 public class MainActivity extends Activity {
@@ -35,6 +38,7 @@ public class MainActivity extends Activity {
     private EditText promptInput;
     private TextView modelChip;
     private TextView statusView;
+    private TextView sandboxChip;
     private ScrollView scrollView;
     private volatile boolean modelOperationRunning = false;
 
@@ -45,8 +49,13 @@ public class MainActivity extends Activity {
     private final int MUTED = Color.rgb(145, 154, 168);
     private final int ACCENT = Color.rgb(110, 92, 255);
     private final int ACCENT2 = Color.rgb(0, 197, 255);
+    private final int SAFE = Color.rgb(57, 194, 123);
+    private final int DANGER = Color.rgb(235, 84, 84);
 
     private static final String DEFAULT_SYSTEM = "You are Vicky's private AI assistant. Be concise, practical and comfortable in Hinglish or English. Never claim a system or integration is verified unless there is current evidence.";
+    private static final String PREF_SANDBOX_KILL = "sandbox_kill";
+    private static final String PREF_AUDIT = "sandbox_audit";
+    private static final int AUDIT_MAX_CHARS = 14000;
 
     private static final String[] AUTO_REGIONS = new String[]{
             "ap-south-1", "ap-south-2", "ap-southeast-1", "ap-southeast-2",
@@ -57,8 +66,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = new SecurePrefs(this);
+        if (prefs.getString(PREF_SANDBOX_KILL, "").isEmpty()) prefs.putString(PREF_SANDBOX_KILL, "0");
+        audit("APP_START", "sandbox=safe");
         buildUi();
-        if (!prefs.getSecret("api_key").isEmpty() && prefs.getString("model", "").isEmpty()) {
+        if (!isKillSwitchOn() && !prefs.getSecret("api_key").isEmpty() && prefs.getString("model", "").isEmpty()) {
             autoConnect(false);
         }
     }
@@ -66,7 +77,7 @@ public class MainActivity extends Activity {
     private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(18), dp(14), dp(18), dp(12));
+        root.setPadding(dp(18), dp(12), dp(18), dp(12));
         root.setBackgroundColor(BG);
 
         root.addView(buildHeader());
@@ -84,43 +95,54 @@ public class MainActivity extends Activity {
 
         setContentView(root);
 
-        if (prefs.getSecret("api_key").isEmpty()) {
-            addBubble("assistant", "Add your Bedrock API key once. I’ll discover, ping and connect to a working model automatically.");
+        if (isKillSwitchOn()) {
+            addBubble("error", "Sandbox kill switch is ON. AI/network actions are blocked until you re-enable them.");
+        } else if (prefs.getSecret("api_key").isEmpty()) {
+            addBubble("assistant", "Sandbox SAFE is active. Add your Bedrock API key once; only Bedrock endpoints are permitted.");
         } else if (prefs.getString("model", "").isEmpty()) {
-            addBubble("assistant", "Bedrock key saved. I’m checking models and will connect only after a real request succeeds.");
+            addBubble("assistant", "Sandbox SAFE is active. I’m checking Bedrock models and will connect only after a real request succeeds.");
         } else {
-            addBubble("assistant", "Ready. The active verified model is shown above. Tap Switch to move to the next working model.");
+            addBubble("assistant", "Sandbox SAFE is active. The verified model is shown above. Tap Switch to move to the next working model.");
         }
     }
 
     private View buildHeader() {
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(0, dp(4), 0, dp(8));
+        row.setPadding(0, dp(2), 0, dp(6));
 
         TextView mark = new TextView(this);
         mark.setText("V");
         mark.setGravity(Gravity.CENTER);
         mark.setTextColor(Color.WHITE);
-        mark.setTextSize(17);
+        mark.setTextSize(16);
         mark.setTypeface(Typeface.DEFAULT_BOLD);
-        mark.setBackground(roundGradient(dp(18), ACCENT, ACCENT2));
-        row.addView(mark, new LinearLayout.LayoutParams(dp(42), dp(42)));
+        mark.setBackground(roundGradient(dp(17), ACCENT, ACCENT2));
+        row.addView(mark, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         LinearLayout titles = new LinearLayout(this);
         titles.setOrientation(LinearLayout.VERTICAL);
-        titles.setPadding(dp(12), 0, 0, 0);
-        TextView title = label("Vicky AI", 23, TEXT, true);
-        TextView sub = label("Private AI workspace", 12, MUTED, false);
+        titles.setPadding(dp(11), 0, 0, 0);
+        TextView title = label("Vicky AI", 21, TEXT, true);
+        TextView sub = label("Private AI workspace", 11, MUTED, false);
         titles.addView(title);
         titles.addView(sub);
         row.addView(titles, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
-        TextView settings = label("⚙", 20, TEXT, false);
+        sandboxChip = label(isKillSwitchOn() ? "KILLED" : "SAFE", 10, Color.WHITE, true);
+        sandboxChip.setGravity(Gravity.CENTER);
+        sandboxChip.setPadding(dp(10), dp(7), dp(10), dp(7));
+        sandboxChip.setBackground(round(isKillSwitchOn() ? DANGER : SAFE, dp(13)));
+        sandboxChip.setOnClickListener(v -> showSandbox());
+        row.addView(sandboxChip);
+
+        TextView settings = label("⚙", 18, TEXT, false);
         settings.setGravity(Gravity.CENTER);
-        settings.setBackground(round(PANEL, dp(22)));
+        settings.setBackground(round(PANEL, dp(20)));
         settings.setOnClickListener(v -> showSettings());
-        row.addView(settings, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        slp.setMargins(dp(8), 0, 0, 0);
+        row.addView(settings, slp);
         return row;
     }
 
@@ -128,20 +150,19 @@ public class MainActivity extends Activity {
         LinearLayout tabs = new LinearLayout(this);
         tabs.setGravity(Gravity.CENTER);
         tabs.setPadding(dp(4), dp(4), dp(4), dp(4));
-        tabs.setBackground(round(PANEL, dp(24)));
+        tabs.setBackground(round(PANEL, dp(22)));
 
-        TextView chat = label("Chat", 14, TEXT, true);
+        TextView chat = label("Chat", 13, TEXT, true);
         chat.setGravity(Gravity.CENTER);
-        chat.setBackground(round(PANEL2, dp(20)));
-        TextView work = label("Work", 14, MUTED, true);
+        chat.setBackground(round(PANEL2, dp(18)));
+        TextView work = label("Work", 13, MUTED, true);
         work.setGravity(Gravity.CENTER);
-        tabs.addView(chat, new LinearLayout.LayoutParams(0, dp(42), 1));
-        tabs.addView(work, new LinearLayout.LayoutParams(0, dp(42), 1));
-
-        work.setOnClickListener(v -> Toast.makeText(this, "Work mode will remain isolated from chat until enabled.", Toast.LENGTH_SHORT).show());
+        tabs.addView(chat, new LinearLayout.LayoutParams(0, dp(38), 1));
+        tabs.addView(work, new LinearLayout.LayoutParams(0, dp(38), 1));
+        work.setOnClickListener(v -> Toast.makeText(this, "Work mode remains isolated until tools are explicitly enabled.", Toast.LENGTH_SHORT).show());
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, dp(8), 0, dp(12));
+        lp.setMargins(0, dp(7), 0, dp(10));
         tabs.setLayoutParams(lp);
         return tabs;
     }
@@ -149,30 +170,30 @@ public class MainActivity extends Activity {
     private View buildModelBar() {
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(12), dp(9), dp(8), dp(9));
-        row.setBackground(round(Color.rgb(13, 16, 22), dp(16)));
+        row.setPadding(dp(12), dp(8), dp(8), dp(8));
+        row.setBackground(round(Color.rgb(13, 16, 22), dp(15)));
 
-        TextView dot = label("●", 11, prefs.getString("model", "").isEmpty() ? MUTED : Color.rgb(70, 214, 139), false);
+        TextView dot = label("●", 11, prefs.getString("model", "").isEmpty() ? MUTED : SAFE, false);
         row.addView(dot);
 
-        modelChip = label(shortConnectionLabel(), 11, TEXT, false);
+        modelChip = label(shortConnectionLabel(), 10.5f, TEXT, false);
         modelChip.setSingleLine(true);
         modelChip.setPadding(dp(8), 0, dp(8), 0);
         row.addView(modelChip, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
-        TextView switchModel = label("Switch", 11, Color.WHITE, true);
+        TextView switchModel = label("Switch", 10.5f, Color.WHITE, true);
         switchModel.setGravity(Gravity.CENTER);
-        switchModel.setPadding(dp(11), dp(7), dp(11), dp(7));
-        switchModel.setBackground(round(PANEL2, dp(13)));
+        switchModel.setPadding(dp(10), dp(6), dp(10), dp(6));
+        switchModel.setBackground(round(PANEL2, dp(12)));
         switchModel.setOnClickListener(v -> switchToNextModel());
         row.addView(switchModel);
 
-        statusView = label(initialStatus(), 9, MUTED, true);
-        statusView.setPadding(dp(10), 0, 0, 0);
+        statusView = label(initialStatus(), 8.5f, MUTED, true);
+        statusView.setPadding(dp(9), 0, 0, 0);
         row.addView(statusView);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 0, 0, dp(10));
+        lp.setMargins(0, 0, 0, dp(8));
         row.setLayoutParams(lp);
         return row;
     }
@@ -205,12 +226,60 @@ public class MainActivity extends Activity {
         return row;
     }
 
+    private void showSandbox() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(18), dp(8), dp(18), dp(8));
+
+        TextView summary = label(
+                "MODE: SAFE\n\n" +
+                "• Device permissions: INTERNET only\n" +
+                "• Network: Bedrock endpoints only\n" +
+                "• Contacts/SMS/location/camera/mic: blocked by manifest\n" +
+                "• External writes/tools: not enabled\n" +
+                "• API key: encrypted with Android Keystore\n" +
+                "• Audit log: enabled\n\n" +
+                "Kill switch: " + (isKillSwitchOn() ? "ON — AI/network blocked" : "OFF — restricted Bedrock access allowed"),
+                13, Color.DKGRAY, false);
+        box.addView(summary);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Sandbox Controls")
+                .setView(box)
+                .setNeutralButton("Audit Log", (d, w) -> showAuditLog())
+                .setNegativeButton("Close", null)
+                .setPositiveButton(isKillSwitchOn() ? "Enable AI" : "KILL SWITCH", (d, w) -> {
+                    boolean next = !isKillSwitchOn();
+                    prefs.putString(PREF_SANDBOX_KILL, next ? "1" : "0");
+                    audit(next ? "KILL_SWITCH_ON" : "KILL_SWITCH_OFF", "user_action");
+                    refreshSandboxUi();
+                    Toast.makeText(this, next ? "AI/network actions blocked" : "Restricted Bedrock access enabled", Toast.LENGTH_LONG).show();
+                }).show();
+    }
+
+    private void showAuditLog() {
+        String log = prefs.getString(PREF_AUDIT, "No audit events yet.");
+        TextView view = label(log, 12, Color.DKGRAY, false);
+        view.setTextIsSelectable(true);
+        view.setPadding(dp(14), dp(10), dp(14), dp(10));
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(view);
+        new AlertDialog.Builder(this)
+                .setTitle("Sandbox Audit Log")
+                .setView(scroll)
+                .setNegativeButton("Close", null)
+                .setPositiveButton("Clear", (d, w) -> {
+                    prefs.putString(PREF_AUDIT, "");
+                    audit("AUDIT_CLEARED", "user_action");
+                }).show();
+    }
+
     private void showSettings() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(18), dp(12), dp(18), dp(8));
 
-        TextView info = label("Only your Bedrock API key is required. Region and model are discovered and verified automatically.", 13, Color.DKGRAY, false);
+        TextView info = label("Sandbox SAFE is enforced. Only your Bedrock API key is required; model and region are discovered automatically.", 13, Color.DKGRAY, false);
         info.setPadding(0, 0, 0, dp(12));
         box.addView(info);
 
@@ -235,12 +304,55 @@ public class MainActivity extends Activity {
                     prefs.putString("region", "");
                     prefs.putString("candidates", "");
                     prefs.putString("candidate_index", "-1");
+                    audit("KEY_SAVED", "encrypted_keystore");
                     updateConnectionUi("DISCOVERING");
                     autoConnect(true);
                 }).show();
     }
 
+    private boolean isKillSwitchOn() {
+        return "1".equals(prefs.getString(PREF_SANDBOX_KILL, "0"));
+    }
+
+    private void refreshSandboxUi() {
+        if (sandboxChip != null) {
+            sandboxChip.setText(isKillSwitchOn() ? "KILLED" : "SAFE");
+            sandboxChip.setBackground(round(isKillSwitchOn() ? DANGER : SAFE, dp(13)));
+        }
+        updateConnectionUi(isKillSwitchOn() ? "BLOCKED" : initialStatus());
+    }
+
+    private void ensureSandboxAllowsNetwork() throws Exception {
+        if (isKillSwitchOn()) {
+            audit("BLOCKED", "kill_switch");
+            throw new SecurityException("Sandbox kill switch is ON");
+        }
+    }
+
+    private void validateEndpoint(String endpoint) throws Exception {
+        URL url = new URL(endpoint);
+        String host = url.getHost();
+        boolean allowed = "https".equalsIgnoreCase(url.getProtocol())
+                && host.startsWith("bedrock-mantle.")
+                && host.endsWith(".api.aws");
+        if (!allowed) {
+            audit("BLOCKED_ENDPOINT", host);
+            throw new SecurityException("Sandbox blocked non-Bedrock endpoint: " + host);
+        }
+    }
+
+    private void audit(String action, String detail) {
+        String ts = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date());
+        String clean = detail == null ? "" : detail.replace('\n', ' ').replace('\r', ' ');
+        String line = ts + " | " + action + " | " + clean + "\n";
+        String old = prefs.getString(PREF_AUDIT, "");
+        String combined = line + old;
+        if (combined.length() > AUDIT_MAX_CHARS) combined = combined.substring(0, AUDIT_MAX_CHARS);
+        prefs.putString(PREF_AUDIT, combined);
+    }
+
     private String initialStatus() {
+        if (isKillSwitchOn()) return "BLOCKED";
         if (prefs.getSecret("api_key").isEmpty()) return "KEY NEEDED";
         return prefs.getString("model", "").isEmpty() ? "UNVERIFIED" : "VERIFIED";
     }
@@ -248,6 +360,7 @@ public class MainActivity extends Activity {
     private String shortConnectionLabel() {
         String model = prefs.getString("model", "");
         String region = prefs.getString("region", "");
+        if (isKillSwitchOn()) return "Sandbox · network blocked";
         if (prefs.getSecret("api_key").isEmpty()) return "Bedrock · API key not set";
         if (model.isEmpty()) return "Bedrock · finding a working model…";
         return model + " · " + region;
@@ -260,6 +373,11 @@ public class MainActivity extends Activity {
 
     private void autoConnect(boolean forceRediscover) {
         if (modelOperationRunning) return;
+        if (isKillSwitchOn()) {
+            audit("AUTO_CONNECT_BLOCKED", "kill_switch");
+            refreshSandboxUi();
+            return;
+        }
         final String apiKey = prefs.getSecret("api_key");
         if (apiKey.isEmpty()) {
             showSettings();
@@ -267,17 +385,20 @@ public class MainActivity extends Activity {
         }
         modelOperationRunning = true;
         updateConnectionUi("DISCOVERING");
+        audit("AUTO_CONNECT_START", forceRediscover ? "rediscover" : "cached_allowed");
 
         new Thread(() -> {
             try {
                 JSONArray candidates = loadOrDiscover(apiKey, forceRediscover);
                 final ModelChoice choice = findWorkingModel(apiKey, candidates, 0, candidates.length());
                 saveChoice(choice, candidates);
+                audit("MODEL_VERIFIED", choice.model + " @ " + choice.region);
                 runOnUiThread(() -> {
                     updateConnectionUi("VERIFIED");
                     addBubble("assistant", "Connected and verified.\n" + choice.model + "\nRegion: " + choice.region);
                 });
             } catch (Exception e) {
+                audit("AUTO_CONNECT_FAILED", safeMessage(e));
                 runOnUiThread(() -> {
                     prefs.putString("model", "");
                     prefs.putString("region", "");
@@ -291,6 +412,11 @@ public class MainActivity extends Activity {
     }
 
     private void switchToNextModel() {
+        if (isKillSwitchOn()) {
+            Toast.makeText(this, "Sandbox kill switch is ON", Toast.LENGTH_SHORT).show();
+            audit("MODEL_SWITCH_BLOCKED", "kill_switch");
+            return;
+        }
         if (modelOperationRunning) {
             Toast.makeText(this, "Model check already running", Toast.LENGTH_SHORT).show();
             return;
@@ -303,6 +429,7 @@ public class MainActivity extends Activity {
 
         modelOperationRunning = true;
         updateConnectionUi("SWITCHING");
+        audit("MODEL_SWITCH_START", prefs.getString("model", "none"));
         new Thread(() -> {
             try {
                 JSONArray candidates = loadOrDiscover(apiKey, false);
@@ -315,11 +442,13 @@ public class MainActivity extends Activity {
                 }
                 final ModelChoice choice = found;
                 saveChoice(choice, candidates);
+                audit("MODEL_SWITCHED", choice.model + " @ " + choice.region);
                 runOnUiThread(() -> {
                     updateConnectionUi("VERIFIED");
                     Toast.makeText(this, "Switched to " + choice.model, Toast.LENGTH_LONG).show();
                 });
             } catch (Exception e) {
+                audit("MODEL_SWITCH_FAILED", safeMessage(e));
                 runOnUiThread(() -> {
                     updateConnectionUi(prefs.getString("model", "").isEmpty() ? "NO MODEL" : "VERIFIED");
                     Toast.makeText(this, "No other working model found", Toast.LENGTH_LONG).show();
@@ -358,6 +487,7 @@ public class MainActivity extends Activity {
                 last = e;
             }
         }
+        audit("MODEL_DISCOVERY", "candidates=" + all.length());
         if (all.length() == 0) throw last == null ? new Exception("No models returned by Bedrock") : last;
         return all;
     }
@@ -415,6 +545,11 @@ public class MainActivity extends Activity {
     private void sendMessage() {
         String text = promptInput.getText().toString().trim();
         if (text.isEmpty()) return;
+        if (isKillSwitchOn()) {
+            audit("CHAT_BLOCKED", "kill_switch");
+            Toast.makeText(this, "Sandbox kill switch is ON", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (prefs.getSecret("api_key").isEmpty()) {
             showSettings();
             return;
@@ -428,14 +563,17 @@ public class MainActivity extends Activity {
         promptInput.setText("");
         addBubble("user", text);
         statusView.setText("THINKING");
+        audit("CHAT_REQUEST", "model=" + prefs.getString("model", ""));
         new Thread(() -> {
             try {
                 final String answer = callBedrock(text);
+                audit("CHAT_SUCCESS", "chars=" + answer.length());
                 runOnUiThread(() -> {
                     addBubble("assistant", answer);
                     updateConnectionUi("VERIFIED");
                 });
             } catch (Exception e) {
+                audit("CHAT_FAILED", safeMessage(e));
                 runOnUiThread(() -> {
                     addBubble("error", "Request failed\n" + safeMessage(e));
                     statusView.setText("FAILED");
@@ -471,6 +609,8 @@ public class MainActivity extends Activity {
     }
 
     private HttpURLConnection open(String endpoint, String method, String apiKey, int timeout) throws Exception {
+        ensureSandboxAllowsNetwork();
+        validateEndpoint(endpoint);
         HttpURLConnection conn = (HttpURLConnection) new URL(endpoint).openConnection();
         conn.setRequestMethod(method);
         conn.setConnectTimeout(12000);
