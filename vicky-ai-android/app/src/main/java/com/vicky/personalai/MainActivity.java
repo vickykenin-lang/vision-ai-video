@@ -43,6 +43,7 @@ public class MainActivity extends Activity {
     private volatile boolean modelOperationRunning = false;
     private volatile boolean teamOperationRunning = false;
     private boolean teamMode = false;
+    private boolean teamPanelExpanded = true;
 
     private final int BG=Color.rgb(7,9,13), PANEL=Color.rgb(18,21,28), PANEL2=Color.rgb(27,31,40);
     private final int TEXT=Color.rgb(242,245,249), MUTED=Color.rgb(145,154,168), ACCENT=Color.rgb(110,92,255), ACCENT2=Color.rgb(0,197,255);
@@ -63,25 +64,25 @@ public class MainActivity extends Activity {
     }
 
     private void buildUi(){
-        LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(dp(18),dp(12),dp(18),dp(12)); root.setBackgroundColor(BG);
+        LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(dp(14),dp(7),dp(14),dp(10)); root.setBackgroundColor(BG);
         root.addView(buildHeader()); root.addView(buildTabs()); root.addView(buildModelBar()); root.addView(buildTeamPanel());
         scrollView=new ScrollView(this); scrollView.setFillViewport(true); chatContainer=new LinearLayout(this); chatContainer.setOrientation(LinearLayout.VERTICAL); chatContainer.setPadding(0,dp(8),0,dp(12)); scrollView.addView(chatContainer);
         root.addView(scrollView,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1)); root.addView(buildComposer()); setContentView(root);
     }
 
     private View buildHeader(){
-        LinearLayout r=new LinearLayout(this); r.setGravity(Gravity.CENTER_VERTICAL); r.setPadding(0,dp(2),0,dp(6));
-        TextView mark=label("V",16,Color.WHITE,true); mark.setGravity(Gravity.CENTER); mark.setBackground(roundGradient(dp(17),ACCENT,ACCENT2)); r.addView(mark,new LinearLayout.LayoutParams(dp(40),dp(40)));
-        LinearLayout t=new LinearLayout(this); t.setOrientation(LinearLayout.VERTICAL); t.setPadding(dp(11),0,0,0); t.addView(label("Vicky AI",21,TEXT,true)); t.addView(label("Private AI workspace",11,MUTED,false)); r.addView(t,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1));
-        sandboxChip=label(isKilled()?"KILLED":"SAFE",10,Color.WHITE,true); sandboxChip.setGravity(Gravity.CENTER); sandboxChip.setPadding(dp(10),dp(7),dp(10),dp(7)); sandboxChip.setBackground(round(isKilled()?DANGER:SAFE,dp(13))); sandboxChip.setOnClickListener(v->showSandbox()); r.addView(sandboxChip);
-        TextView settings=label("⚙",18,TEXT,false); settings.setGravity(Gravity.CENTER); settings.setBackground(round(PANEL,dp(20))); settings.setOnClickListener(v->showSettings()); LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(dp(40),dp(40)); sp.setMargins(dp(8),0,0,0); r.addView(settings,sp); return r;
+        LinearLayout r=new LinearLayout(this); r.setGravity(Gravity.CENTER_VERTICAL); r.setPadding(0,0,0,dp(3));
+        TextView mark=label("V",14,Color.WHITE,true); mark.setGravity(Gravity.CENTER); mark.setBackground(roundGradient(dp(15),ACCENT,ACCENT2)); r.addView(mark,new LinearLayout.LayoutParams(dp(34),dp(34)));
+        LinearLayout t=new LinearLayout(this); t.setOrientation(LinearLayout.VERTICAL); t.setPadding(dp(9),0,0,0); t.addView(label("Vicky AI",19,TEXT,true)); t.addView(label("Self-organizing AI team",9.5f,MUTED,false)); r.addView(t,new LinearLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT,1));
+        sandboxChip=label(isKilled()?"KILLED":"SAFE",9,Color.WHITE,true); sandboxChip.setGravity(Gravity.CENTER); sandboxChip.setPadding(dp(9),dp(5),dp(9),dp(5)); sandboxChip.setBackground(round(isKilled()?DANGER:SAFE,dp(12))); sandboxChip.setOnClickListener(v->showSandbox()); r.addView(sandboxChip);
+        TextView settings=label("⚙",16,TEXT,false); settings.setGravity(Gravity.CENTER); settings.setBackground(round(PANEL,dp(17))); settings.setOnClickListener(v->showSettings()); LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(dp(34),dp(34)); sp.setMargins(dp(7),0,0,0); r.addView(settings,sp); return r;
     }
 
     private View buildTabs(){
-        LinearLayout tabs=new LinearLayout(this); tabs.setPadding(dp(4),dp(4),dp(4),dp(4)); tabs.setBackground(round(PANEL,dp(22)));
-        chatTab=label("Chat",13,TEXT,true); teamTab=label("Team",13,MUTED,true); chatTab.setGravity(Gravity.CENTER); teamTab.setGravity(Gravity.CENTER); chatTab.setBackground(round(PANEL2,dp(18)));
-        tabs.addView(chatTab,new LinearLayout.LayoutParams(0,dp(38),1)); tabs.addView(teamTab,new LinearLayout.LayoutParams(0,dp(38),1)); chatTab.setOnClickListener(v->setTeamMode(false)); teamTab.setOnClickListener(v->setTeamMode(true));
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); lp.setMargins(0,dp(7),0,dp(9)); tabs.setLayoutParams(lp); return tabs;
+        LinearLayout tabs=new LinearLayout(this); tabs.setPadding(dp(3),dp(3),dp(3),dp(3)); tabs.setBackground(round(PANEL,dp(18)));
+        chatTab=label("Chat",12,TEXT,true); teamTab=label("Team",12,MUTED,true); chatTab.setGravity(Gravity.CENTER); teamTab.setGravity(Gravity.CENTER); chatTab.setBackground(round(PANEL2,dp(15)));
+        tabs.addView(chatTab,new LinearLayout.LayoutParams(0,dp(32),1)); tabs.addView(teamTab,new LinearLayout.LayoutParams(0,dp(32),1)); chatTab.setOnClickListener(v->setTeamMode(false)); teamTab.setOnClickListener(v->setTeamMode(true));
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); lp.setMargins(0,dp(4),0,dp(6)); tabs.setLayoutParams(lp); return tabs;
     }
 
     private View buildModelBar(){
@@ -92,10 +93,16 @@ public class MainActivity extends Activity {
     }
 
     private View buildTeamPanel(){
-        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(9),dp(8),dp(9),dp(7)); box.setBackground(round(Color.rgb(13,16,22),dp(15)));
-        teamStatus=label("TEAM MODELS · self-organizing · tap row to Search / Switch",9.5f,MUTED,true); teamStatus.setPadding(dp(3),0,0,dp(5)); box.addView(teamStatus);
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(9),dp(7),dp(9),dp(7)); box.setBackground(round(Color.rgb(13,16,22),dp(15)));
+        teamStatus=label("TEAM MODELS · self-organizing · tap to collapse ▲",9.5f,MUTED,true); teamStatus.setPadding(dp(3),dp(2),0,dp(5)); teamStatus.setOnClickListener(v->toggleTeamPanel()); box.addView(teamStatus);
         for(int i=0;i<4;i++){ final int slot=i; teamRows[i]=label("M"+(i+1)+" · AVAILABLE · NOT SET",10.3f,TEXT,false); teamRows[i].setPadding(dp(8),dp(5),dp(8),dp(5)); teamRows[i].setBackground(round(PANEL2,dp(10))); teamRows[i].setOnClickListener(v->showSlotDialog(slot)); LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); p.setMargins(0,dp(2),0,dp(2)); box.addView(teamRows[i],p); }
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT); lp.setMargins(0,dp(7),0,dp(2)); box.setLayoutParams(lp); refreshTeamUi(); return box;
+    }
+
+    private void toggleTeamPanel(){
+        teamPanelExpanded=!teamPanelExpanded;
+        for(TextView row:teamRows)if(row!=null)row.setVisibility(teamPanelExpanded?View.VISIBLE:View.GONE);
+        refreshTeamUi();
     }
 
     private View buildComposer(){
@@ -144,8 +151,12 @@ public class MainActivity extends Activity {
     private JSONArray getTeam(){try{String raw=prefs.getString(PREF_TEAM,"");return raw.isEmpty()?new JSONArray():new JSONArray(raw);}catch(Exception e){return new JSONArray();}}
 
     private void refreshTeamUi(){
-        JSONArray a=getTeam(); if(teamStatus!=null)teamStatus.setText(a.length()==4?"TEAM MODELS · 4/4 VERIFIED · self-organizing":"TEAM MODELS · "+a.length()+"/4 VERIFIED · tap Team to prepare");
-        for(int i=0;i<4;i++){if(teamRows[i]==null)continue;if(i<a.length()){JSONObject x=a.optJSONObject(i);String m=x==null?"":x.optString("model");if(m.length()>31)m=m.substring(0,31)+"…";teamRows[i].setText("M"+(i+1)+" · AVAILABLE · "+m+" · VERIFIED");teamRows[i].setTextColor(TEXT);}else{teamRows[i].setText("M"+(i+1)+" · AVAILABLE · NOT SET");teamRows[i].setTextColor(MUTED);}}
+        JSONArray a=getTeam();
+        if(teamStatus!=null){
+            String base=a.length()==4?"TEAM MODELS · 4/4 VERIFIED":"TEAM MODELS · "+a.length()+"/4 VERIFIED";
+            teamStatus.setText(base+(teamPanelExpanded?" · tap to collapse ▲":" · tap to expand ▼"));
+        }
+        for(int i=0;i<4;i++){if(teamRows[i]==null)continue;if(i<a.length()){JSONObject x=a.optJSONObject(i);String m=x==null?"":x.optString("model");if(m.length()>31)m=m.substring(0,31)+"…";teamRows[i].setText("M"+(i+1)+" · AVAILABLE · "+m+" · VERIFIED");teamRows[i].setTextColor(TEXT);}else{teamRows[i].setText("M"+(i+1)+" · AVAILABLE · NOT SET");teamRows[i].setTextColor(MUTED);}teamRows[i].setVisibility(teamPanelExpanded?View.VISIBLE:View.GONE);}
     }
 
     private String runtimeContext(){Date now=new Date();SimpleDateFormat d=new SimpleDateFormat("EEEE, dd MMMM yyyy",Locale.US);SimpleDateFormat t=new SimpleDateFormat("HH:mm:ss",Locale.US);return "RUNTIME FACTS — AUTHORITATIVE\nCurrent local date: "+d.format(now)+"\nCurrent local time: "+t.format(now)+"\nTimezone: "+TimeZone.getDefault().getID()+"\nLive web/news/market research: NOT CONNECTED\nNever fabricate current research, sources, prices or news.";}
