@@ -3,11 +3,13 @@
 
     <application
         android:allowBackup="false"
-        android:label="Vicky AI"
+        android:icon="@drawable/omnix_logo"
+        android:roundIcon="@drawable/omnix_logo"
+        android:label="OMNIX"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name=".OmnixActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -15,5 +17,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>
